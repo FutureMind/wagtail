@@ -2923,8 +2923,13 @@ class UserPagePermissionsProxy:
             only_my_sections = only_my_sections | Q(path__startswith=page_path)
 
         # return the filtered queryset
+
+        # patch Page with PageManager, as it will get overridden in wagtail-modeltranslation
+        # with MultiligualManager, that breaks this subquery, then use the PageManager
+        # in following subquery for revisions
+        Page.base_page_manager = PageManager()
         return Revision.page_revisions.submitted().filter(
-            object_id__in=Page.objects.filter(only_my_sections).values_list(
+            object_id__in=Page.base_page_manager.filter(only_my_sections).values_list(
                 Cast("pk", output_field=models.CharField()), flat=True
             )
         )
